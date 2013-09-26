@@ -10,7 +10,6 @@
 #include "svd.h"
 
 
-
 ////////////////////////////////////////////////////////////////////////
 // Constructors/Destructors
 ////////////////////////////////////////////////////////////////////////
@@ -267,19 +266,64 @@ Brighten(double factor)
 void R2Image::
 SobelX(void)
 {
-	// Apply the Sobel oprator to the image in X direction
-  
-  // FILL IN IMPLEMENTATION HERE (REMOVE PRINT STATEMENT WHEN DONE)
-  fprintf(stderr, "SobelX() not implemented\n");
+  // [width][height]
+  double sobel_x [3][3];
+  sobel_x [0][0] = 1;
+  sobel_x [0][1] = 2;
+  sobel_x [0][2] = 1;
+  sobel_x [1][0] = 0;
+  sobel_x [1][1] = 0;
+  sobel_x [1][2] = 0;
+  sobel_x [2][0] = -1;
+  sobel_x [2][1] = -2;
+  sobel_x [2][2] = -1;
+
+  // pixel is the sum of the values after applying the kernal
+  // start applying the kernal at pixel(0,0)
+  for (int i = 0; i < width-2; i++) {
+    for (int j = 0; j < height-2; j++) {
+      Pixel(i,j) = sobel_x[0][0]*Pixel(i,j) + sobel_x[0][1]*Pixel(i,j+1) + sobel_x[0][2]*Pixel(i,j+2) +
+	sobel_x[1][0]*Pixel(i+1,j) + sobel_x[1][1]*Pixel(i+1,j+1) + sobel_x[1][2]*Pixel(i+1,j+2) +
+	sobel_x[2][0]*Pixel(i+2,j) + sobel_x[2][1]*Pixel(i+2,j+1) + sobel_x[2][2]*Pixel(i+2,j+2);
+    }
+  }
+
+  /*
+  // center of kernal applied at pixel(i,j)
+  for (int i = 0; i < width-1; i++) {
+    for (int j = 0; j < height-1; j++) {
+      Pixel(i,j) = sobel_x[0][0]*Pixel(i-1,j-1) + sobel_x[0][1]*Pixel(i-1,j) + sobel_x[0][2]*Pixel(i-1,j+1) +
+	sobel_x[1][0]*Pixel(i,j-1) + sobel_x[1][1]*Pixel(i,j) + sobel_x[1][2]*Pixel(i,j+1) +
+	sobel_x[2][0]*Pixel(i+1,j-1) + sobel_x[2][1]*Pixel(i+1,j) + sobel_x[2][2]*Pixel(i+1,j+1);
+    }
+  }
+*/
 }
 
 void R2Image::
 SobelY(void)
 {
-	// Apply the Sobel oprator to the image in Y direction
-  
-  // FILL IN IMPLEMENTATION HERE (REMOVE PRINT STATEMENT WHEN DONE)
-  fprintf(stderr, "SobelY() not implemented\n");
+  // [width][height]
+  double sobel_y [3][3];
+  sobel_y [0][0] = 1;
+  sobel_y [0][1] = 0;
+  sobel_y [0][2] = -1;
+  sobel_y [1][0] = 1;
+  sobel_y [1][1] = 0;
+  sobel_y [1][2] = -2;
+  sobel_y [2][0] = 1;
+  sobel_y [2][1] = 0;
+  sobel_y [2][2] = -1;
+
+  // pixel is the sum of the values after applying the kernal
+  // start applying the kernal at pixel(0,0)
+  for (int i = 0; i < width-2; i++) {
+    for (int j = 0; j < height-2; j++) {
+      Pixel(i,j) = sobel_y[0][0]*Pixel(i,j) + sobel_y[0][1]*Pixel(i,j+1) + sobel_y[0][2]*Pixel(i,j+2) +
+	sobel_y[1][0]*Pixel(i+1,j) + sobel_y[1][1]*Pixel(i+1,j+1) + sobel_y[1][2]*Pixel(i+1,j+2) +
+	sobel_y[2][0]*Pixel(i+2,j) + sobel_y[2][1]*Pixel(i+2,j+1) + sobel_y[2][2]*Pixel(i+2,j+2);
+    }
+  }
 }
 
 void R2Image::
