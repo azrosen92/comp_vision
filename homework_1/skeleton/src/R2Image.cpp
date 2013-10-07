@@ -263,82 +263,98 @@ Brighten(double factor)
   }
 }
 
+double R2Image::
+MultiplyKernel(double** kernel, int x, int y, int size) {
+  int half_height = size/2;
+  int half_length = size/2;
+
+  double total = 0;
+  for(int dy = (-1)*half_height; dy <= half_height; dy++) {
+    for(int dx = (-1)*half_length; dx <= half_length; dx++) {
+      int current_x = x + dx;
+      int current_y = y + dy;
+      if(current_y >= height || current_y < 0 || current_x >= width || current_x < 0) {
+        total += 0;
+      } else {
+        total += Pixel(current_x, current_y).Red() * kernel[half_height + dy][half_length + dx];
+      }
+    }
+  }
+  //printf("%f \n", total);
+  return total + 0.5;
+}
+
+void R2Image::
+Convolution(double** kernel, int size) {
+  R2Image newImage(width, height);
+
+  for(int x = 0; x < width; x++) {
+    for(int y = 0; y < height; y++) {
+      double red_val = MultiplyKernel(kernel, x, y, size);
+      newImage.Pixel(x, y).Reset(red_val, red_val, red_val, 1);
+      newImage.Pixel(x,y).Clamp();
+    }
+  }
+
+  *this = newImage;
+}
 void R2Image::
 SobelX(void)
 {
   // [width][height]
-  double sobel_x [3][3];
-  sobel_x [0][0] = 1;
-  sobel_x [0][1] = 2;
-  sobel_x [0][2] = 1;
-  sobel_x [1][0] = 0;
-  sobel_x [1][1] = 0;
-  sobel_x [1][2] = 0;
-  sobel_x [2][0] = -1;
-  sobel_x [2][1] = -2;
-  sobel_x [2][2] = -1;
-
-  // pixel is the sum of the values after applying the kernal
-  // start applying the kernal at pixel(0,0)
-  /*
-  for (int i = 0; i < width-2; i++) {
-    for (int j = 0; j < height-2; j++) {
-      Pixel(i,j) = sobel_x[0][0]*Pixel(i,j) + sobel_x[0][1]*Pixel(i,j+1) + sobel_x[0][2]*Pixel(i,j+2) +
-	sobel_x[1][0]*Pixel(i+1,j) + sobel_x[1][1]*Pixel(i+1,j+1) + sobel_x[1][2]*Pixel(i+1,j+2) +
-	sobel_x[2][0]*Pixel(i+2,j) + sobel_x[2][1]*Pixel(i+2,j+1) + sobel_x[2][2]*Pixel(i+2,j+2);
-    }
+  /*    0 1 2
+   * 0[[ , , ],
+   * 1 [ , , ],
+   * 2 [ , , ]]
+   * */
+  double** sobel_x;
+  sobel_x = new double*[3];
+  int KERNEL_SIZE = 3;
+  for(int i = 0; i < KERNEL_SIZE; i++) {
+    sobel_x[i] = new double[3];
   }
-  */
   
-  // center of kernal applied at pixel(i,j)
-  R2Image myImage(width,height);
-  for (int i = 0; i < width-1; i++) {
-    for (int j = 0; j < height-1; j++) {
-      myImage.Pixel(i,j) = sobel_x[0][0]*Pixel(i-1,j-1) + sobel_x[0][1]*Pixel(i-1,j) + sobel_x[0][2]*Pixel(i-1,j+1) +
-	sobel_x[1][0]*Pixel(i,j-1) + sobel_x[1][1]*Pixel(i,j) + sobel_x[1][2]*Pixel(i,j+1) +
-	sobel_x[2][0]*Pixel(i+1,j-1) + sobel_x[2][1]*Pixel(i+1,j) + sobel_x[2][2]*Pixel(i+1,j+1);
-    }
-  }
-
-  for (int i = 0; i < width; i++) {
-    for (int j = 0; j < height; j++) {
-      Pixel(i,j) = myImage.Pixel(i,j);
-    }
-  }
-
+  sobel_x [0][0] = 1;
+  sobel_x [0][1] = 0;
+  sobel_x [0][2] = -1;
+  sobel_x [1][0] = 2;
+  sobel_x [1][1] = 0;
+  sobel_x [1][2] = -2;
+  sobel_x [2][0] = 1;
+  sobel_x [2][1] = 0;
+  sobel_x [2][2] = -1;
+  
+  Convolution(sobel_x, KERNEL_SIZE);
+  
 }
 
 void R2Image::
 SobelY(void)
 {
   // [width][height]
-  double sobel_y [3][3];
+  /*    0 1 2
+   * 0[[ , , ],
+   * 1 [ , , ],
+   * 2 [ , , ]]
+   * */
+  double** sobel_y;
+  sobel_y = new double*[3];
+  int KERNEL_SIZE = 3;
+  for(int i = 0; i < KERNEL_SIZE; i++) {
+    sobel_y[i] = new double[3];
+  }
+
   sobel_y [0][0] = 1;
-  sobel_y [0][1] = 0;
-  sobel_y [0][2] = -1;
-  sobel_y [1][0] = 1;
+  sobel_y [0][1] = 2;
+  sobel_y [0][2] = 1;
+  sobel_y [1][0] = 0;
   sobel_y [1][1] = 0;
-  sobel_y [1][2] = -2;
-  sobel_y [2][0] = 1;
-  sobel_y [2][1] = 0;
+  sobel_y [1][2] = 0;
+  sobel_y [2][0] = -1;
+  sobel_y [2][1] = -2;
   sobel_y [2][2] = -1;
 
-  // center of kernal applied at pixel(i,j)
-  R2Image myImage(width,height);
-  for (int i = 0; i < width-1; i++) {
-    for (int j = 0; j < height-1; j++) {
-      myImage.Pixel(i,j) = sobel_y[0][0]*Pixel(i-1,j-1) + sobel_y[0][1]*Pixel(i-1,j) + sobel_y[0][2]*Pixel(i-1,j+1) +
-	sobel_y[1][0]*Pixel(i,j-1) + sobel_y[1][1]*Pixel(i,j) + sobel_y[1][2]*Pixel(i,j+1) +
-	sobel_y[2][0]*Pixel(i+1,j-1) + sobel_y[2][1]*Pixel(i+1,j) + sobel_y[2][2]*Pixel(i+1,j+1);
-    }
-  }
-
-  for (int i = 0; i < width; i++) {
-    for (int j = 0; j < height; j++) {
-      Pixel(i,j) = myImage.Pixel(i,j);
-    }
-  }
-
+  Convolution(sobel_y, KERNEL_SIZE);
 }
 
 void R2Image::
@@ -370,7 +386,31 @@ Blur(double sigma)
   // Gaussian blur of the image. Separable solution is preferred
   
   // FILL IN IMPLEMENTATION HERE (REMOVE PRINT STATEMENT WHEN DONE)
-  fprintf(stderr, "Blur(%g) not implemented\n", sigma);
+  //fprintf(stderr, "Blur(%g) not implemented\n", sigma);
+
+  // [width][height]
+  /*    0 1 2
+   * 0[[ , , ],
+   * 1 [ , , ],
+   * 2 [ , , ]]
+   * */
+  double** kernel;
+  int KERNEL_SIZE = sigma * 3;  
+  kernel = new double*[KERNEL_SIZE];
+  for(int i = 0; i < KERNEL_SIZE; i++) {
+    kernel[i] = new double[KERNEL_SIZE];
+  }
+
+  for(int i = 0; i < KERNEL_SIZE; i++) {
+    for(int j = 0; j < KERNEL_SIZE; j++) {
+      float mean = sigma/3;
+      kernel[i][j] = exp( -0.5 * (pow((i-mean)/sigma, 2.0) + pow((j-mean)/sigma,2.0)) )
+                     / (2 * 3.14 * sigma * sigma);
+    }
+  }
+
+  Convolution(kernel, KERNEL_SIZE);
+
 }
 
 
@@ -391,7 +431,32 @@ Sharpen()
   // Sharpen an image using a linear filter. Use a kernel of your choosing.
 
   // FILL IN IMPLEMENTATION HERE (REMOVE PRINT STATEMENT WHEN DONE)
-  fprintf(stderr, "Sharpen() not implemented\n");
+  //fprintf(stderr, "Sharpen() not implemented\n");
+    // [width][height]
+  /*    0 1 2
+   * 0[[ , , ],
+   * 1 [ , , ],
+   * 2 [ , , ]]
+   * */
+  double** kernel;
+  kernel = new double*[3];
+  int KERNEL_SIZE = 3;
+  for(int i = 0; i < KERNEL_SIZE; i++) {
+    kernel[i] = new double[3];
+  }
+
+  kernel [0][0] = 0;
+  kernel [0][1] = -1;
+  kernel [0][2] = 0;
+  kernel [1][0] = -1;
+  kernel [1][1] = 5;
+  kernel [1][2] = -1;
+  kernel [2][0] = 0;
+  kernel [2][1] = -1;
+  kernel [2][2] = 0;
+
+  Convolution(kernel, KERNEL_SIZE);
+
 }
 
 
