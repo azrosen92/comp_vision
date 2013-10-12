@@ -284,7 +284,7 @@ MultiplyKernel(double** kernel, int x, int y, int size) {
   return total + 0.5;
 }
 
-void R2Image::
+R2Image R2Image::
 Convolution(double** kernel, int size) {
   R2Image newImage(width, height);
 
@@ -296,7 +296,8 @@ Convolution(double** kernel, int size) {
     }
   }
 
-  *this = newImage;
+  return newImage;
+  //*this = newImage;
 }
 void R2Image::
 SobelX(void)
@@ -324,7 +325,8 @@ SobelX(void)
   sobel_x [2][1] = 0;
   sobel_x [2][2] = -1;
   
-  Convolution(sobel_x, KERNEL_SIZE);
+  R2Image newImage = Convolution(sobel_x, KERNEL_SIZE);
+  *this = newImage;
   
 }
 
@@ -354,7 +356,8 @@ SobelY(void)
   sobel_y [2][1] = -2;
   sobel_y [2][2] = -1;
 
-  Convolution(sobel_y, KERNEL_SIZE);
+  R2Image newImage = Convolution(sobel_y, KERNEL_SIZE);
+  *this = newImage;
 }
 
 void R2Image::
@@ -409,7 +412,8 @@ Blur(double sigma)
     }
   }
 
-  Convolution(kernel, KERNEL_SIZE);
+  R2Image newImage = Convolution(kernel, KERNEL_SIZE);
+  *this = newImage;
 
 }
 
@@ -417,11 +421,75 @@ Blur(double sigma)
 void R2Image::
 Harris(double sigma)
 {
-    // Harris corner detector. Make use of the previously developed filters, such as the Gaussian blur filter
+  int KERNEL_SIZE = 3;
+  double ALPHA = 0.04;
+
+  double** sobel_y = new double*[KERNEL_SIZE];
+  double** sobel_x = new double*[KERNEL_SIZE];
+  double** gaussian_kernel = new double*[KERNEL_SIZE];
+
+  for(int i = 0; i < KERNEL_SIZE; i++) {
+    sobel_y[i] = new double[KERNEL_SIZE];
+    sobel_x[i] = new double[KERNEL_SIZE];
+    gaussian_kernel[i] = new double[KERNEL_SIZE];
+    
+    for(int j = 0; j < KERNEL_SIZE; j++) {
+      float mean = sigma/3;
+      gaussian_kernel[i][j] = exp( -0.5 * (pow((i-mean)/sigma, 2.0) + pow((j-mean)/sigma,2.0)) )
+                              / (2 * 3.14 * sigma * sigma);
+    }
+    
+  }
+
+  sobel_y [0][0] = 1;
+  sobel_y [0][1] = 2;
+  sobel_y [0][2] = 1;
+  sobel_y [1][0] = 0;
+  sobel_y [1][1] = 0;
+  sobel_y [1][2] = 0;
+  sobel_y [2][0] = -1;
+  sobel_y [2][1] = -2;
+  sobel_y [2][2] = -1;
+
+  sobel_x [0][0] = 1;
+  sobel_x [0][1] = 0;
+  sobel_x [0][2] = -1;
+  sobel_x [1][0] = 2;
+  sobel_x [1][1] = 0;
+  sobel_x [1][2] = -2;
+  sobel_x [2][0] = 1;
+  sobel_x [2][1] = 0;
+  sobel_x [2][2] = -1;
+
+  // Harris corner detector. Make use of the previously developed filters, such as the Gaussian blur filter
 	// Output should be 50% grey at flat regions, white at corners and black/dark near edges
   
   // FILL IN IMPLEMENTATION HERE (REMOVE PRINT STATEMENT WHEN DONE)
-  fprintf(stderr, "Harris(%g) not implemented\n", sigma);
+  
+  R2Image sobel_x_sq_image = Convolution(sobel_x, KERNEL_SIZE).Convolution(sobel_x, KERNEL_SIZE);
+  R2Image sobel_y_sq_image = Convolution(sobel_y, KERNEL_SIZE).Convolution(sobel_y, KERNEL_SIZE);
+  R2Image sobel_x_y_image = Convolution(sobel_x, KERNEL_SIZE).Convolution(sobel_y, KERNEL_SIZE);
+
+  R2Image Ix_sq = sobel_x_sq_image.Convolution(gaussian_kernel, KERNEL_SIZE);
+  R2Image Iy_sq = sobel_y_sq_image.Convolution(gaussian_kernel, KERNEL_SIZE);
+  R2Image Ixy = sobel_x_y_image.Convolution(gaussian_kernel, KERNEL_SIZE);
+
+  R2Image finalImage(width, height);
+  for(int x = 0; x < width; x++) {
+    for(int y = 0; y < height; y++) {
+      double ix_sq_val = Ix_sq.Pixel(x,y).Red();
+      double iy_sq_val = Iy_sq.Pixel(x,y).Red();
+      double ixy_val   = Ixy.Pixel(x,y).Red();
+  
+      double new_value = (ix_sq_val * iy_sq_val) - (ixy_val * ixy_val)
+        - (ALPHA*((ix_sq_val + iy_sq_val) * (ix_sq_val + iy_sq_val)));
+      finalImage.Pixel(x,y).Reset(new_value, new_value, new_value, 1);
+      finalImage.Pixel(x,y).Clamp();
+    }
+  }
+
+  *this = finalImage;
+  
 }
 
 

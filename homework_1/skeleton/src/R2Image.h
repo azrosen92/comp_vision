@@ -68,7 +68,7 @@ class R2Image {
 
   // Linear filtering operations
   double MultiplyKernel(double** kernel, int x, int y, int size);
-  void Convolution(double** kernel, int size);
+  R2Image Convolution(double** kernel, int size);
   void SobelX();
   void SobelY();
   void LoG();
