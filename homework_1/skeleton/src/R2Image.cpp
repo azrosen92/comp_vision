@@ -466,15 +466,31 @@ Harris(double sigma)
   
   // FILL IN IMPLEMENTATION HERE (REMOVE PRINT STATEMENT WHEN DONE)
   
-  R2Image sobel_x_sq_image = Convolution(sobel_x, KERNEL_SIZE).Convolution(sobel_x, KERNEL_SIZE);
-  R2Image sobel_y_sq_image = Convolution(sobel_y, KERNEL_SIZE).Convolution(sobel_y, KERNEL_SIZE);
-  R2Image sobel_x_y_image = Convolution(sobel_x, KERNEL_SIZE).Convolution(sobel_y, KERNEL_SIZE);
+  R2Image sobel_x_image = Convolution(sobel_x, KERNEL_SIZE);
+  R2Image sobel_y_image = Convolution(sobel_y, KERNEL_SIZE);
 
-  R2Image Ix_sq = sobel_x_sq_image.Convolution(gaussian_kernel, KERNEL_SIZE);
-  R2Image Iy_sq = sobel_y_sq_image.Convolution(gaussian_kernel, KERNEL_SIZE);
-  R2Image Ixy = sobel_x_y_image.Convolution(gaussian_kernel, KERNEL_SIZE);
+  R2Image Ix_sq(width, height);// = sobel_x_sq_image.Convolution(gaussian_kernel, KERNEL_SIZE);
+  R2Image Iy_sq(width, height);// = sobel_y_sq_image.Convolution(gaussian_kernel, KERNEL_SIZE);
+  R2Image Ixy(width, height);// = sobel_x_y_image.Convolution(gaussian_kernel, KERNEL_SIZE);
+  for(int x = 0; x < width; x++) {
+    for(int y = 0; y < height; y++) {
+      double sobel_x_pix_val = sobel_x_image.Pixel(x,y).Red();
+      double sobel_y_pix_val = sobel_y_image.Pixel(x,y).Red();
+      double x2 = sobel_x_pix_val * sobel_x_pix_val;
+      double y2 = sobel_y_pix_val * sobel_y_pix_val;
+      double xy = sobel_x_pix_val * sobel_y_pix_val;
+      Ix_sq.Pixel(x,y).Reset(x2, x2, x2, 1);
+      Iy_sq.Pixel(x,y).Reset(y2, y2, y2, 1);
+      Ixy.Pixel(x,y).Reset(xy, xy, xy, 1);
+    }
+  }
+
+  Ix_sq = Ix_sq.Convolution(gaussian_kernel, KERNEL_SIZE);
+  Iy_sq = Iy_sq.Convolution(gaussian_kernel, KERNEL_SIZE);
+  Ixy = Ixy.Convolution(gaussian_kernel, KERNEL_SIZE);
 
   R2Image finalImage(width, height);
+
   for(int x = 0; x < width; x++) {
     for(int y = 0; y < height; y++) {
       double ix_sq_val = Ix_sq.Pixel(x,y).Red();
@@ -484,13 +500,48 @@ Harris(double sigma)
       double new_value = (ix_sq_val * iy_sq_val) - (ixy_val * ixy_val)
         - (ALPHA*((ix_sq_val + iy_sq_val) * (ix_sq_val + iy_sq_val)));
       finalImage.Pixel(x,y).Reset(new_value, new_value, new_value, 1);
-      finalImage.Pixel(x,y).Clamp();
+      //finalImage.Pixel(x,y).Clamp();
     }
   }
 
   *this = finalImage;
   
 }
+
+
+/*
+//recursive function to insert the pixel in the correct place in the array
+double** insert_value(double v, double** arr, int x, int y) {
+  if (arr.length <= 1) {
+    return arr;
+  }
+  else {
+    
+  }
+}
+R2Image R2Image::
+DetectFeatures()
+{
+  int NUMBER_OF_FEATURES = 150;
+
+  //array of 'tuples' where highest_feaures[i][0] = x and highest_features[i][1] = y
+  static double** highest_features = new double*[NUMBER_OF_FEATURES];
+  for(int i = 0; i < NUMBER_OF_FEATURES; i++) {
+    highest_features[i] = new double[2];
+    highest_features[i][0] = 0;
+    highest_features[i][1] = 0;
+  }
+
+  for(int x = 0; x < width; x++) {
+    for(int y = 0; y < height; y++) {
+      
+      double pixel_value = Pixel(x,y).Red();
+      
+      double** highest_features = insert_value(pixel_value, highest_features, x, y);      
+    }
+  }
+}
+*/
 
 
 void R2Image::
